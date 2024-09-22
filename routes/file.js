@@ -5,7 +5,7 @@ import {
   getAllFiles,
   downloadFile,
   deleteFile,
-} from "../controllers/file";
+} from "../controllers/file.js";
 
 const storage = multer.diskStorage({
   destination: (req, file, cb) => {

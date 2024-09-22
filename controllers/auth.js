@@ -1,61 +1,56 @@
-import bcrypt from "bcrypt";
-import jwt from "jsonwebtoken";
 import User from "../models/User.js";
-import dotenv from "dotenv";
-import { OAuth2Client } from "google-auth-library";
-
-dotenv.config();
-const client = new OAuth2Client(process.env.GOOGLE_CLIENT_ID);
-
-export const registerUser = async (req, res) => {
-  const { email, password } = req.body;
-  try {
-    const salt = await bcrypt.genSalt(10);
-    const hashedPassword = await bcrypt.hash(password, salt);
-    const user = new User({ email, password: hashedPassword });
-    await user.save();
-    res.status(201).json({ message: "User registered successfully" });
-  } catch (err) {
-    res.status(500).json({ message: "Error registering user" });
-  }
-};
+import bcrypt from "bcryptjs";
 
 export const loginUser = async (req, res) => {
   const { email, password } = req.body;
+
   try {
+    // Check if user exists
     const user = await User.findOne({ email });
-    if (user && (await bcrypt.compare(password, user.password))) {
-      const token = jwt.sign({ id: user._id }, process.env.JWT_SECRET, {
-        expiresIn: "1d",
-      });
-      res.status(200).json({ token });
-    } else {
-      res.status(401).json({ message: "Invalid credentials" });
+    if (!user) {
+      return res.status(400).json({ message: "Invalid email or password" });
     }
-  } catch (err) {
-    res.status(500).json({ message: "Error logging in" });
+
+    // Check if password matches
+    const isMatch = await user.matchPassword(password);
+    if (!isMatch) {
+      return res.status(400).json({ message: "Invalid email or password" });
+    }
+
+    // Login successful, create session
+    req.session.userId = user._id;
+    res.json({ message: "Login successful", user });
+  } catch (error) {
+    res.status(500).json({ message: "Server error" });
   }
 };
 
-// Google Login
-export const googleLogin = async (req, res) => {
-  const { tokenId } = req.body;
+export const signupUser = async (req, res) => {
+  const { name, email, password } = req.body;
+
   try {
-    const ticket = await client.verifyIdToken({
-      idToken: tokenId,
-      audience: process.env.GOOGLE_CLIENT_ID,
-    });
-    const { email } = ticket.getPayload();
-    let user = await User.findOne({ email });
-    if (!user) {
-      user = new User({ email });
-      await user.save();
+    // Check if user already exists
+    const existingUser = await User.findOne({ email });
+    if (existingUser) {
+      return res.status(400).json({ message: "User already exists" });
     }
-    const token = jwt.sign({ id: user._id }, process.env.JWT_SECRET, {
-      expiresIn: "1d",
-    });
-    res.status(200).json({ token });
-  } catch (err) {
-    res.status(500).json({ message: "Google Login failed" });
+
+    // Create a new user
+    const user = new User({ name, email, password });
+    await user.save();
+
+    res.status(201).json({ message: "User registered successfully", user });
+  } catch (error) {
+    res.status(500).json({ message: "Server error" });
   }
+};
+
+export const logoutUser = (req, res) => {
+  req.session.destroy((err) => {
+    if (err) {
+      return res.status(500).json({ message: "Failed to log out" });
+    }
+    res.clearCookie("connect.sid"); // clear the session cookie
+    res.json({ message: "Logout successful" });
+  });
 };

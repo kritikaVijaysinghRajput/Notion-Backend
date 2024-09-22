@@ -1,12 +1,11 @@
 import express from "express";
 import dotenv from "dotenv";
 import mongoose from "mongoose";
-import passport from "passport";
 import session from "express-session";
+import MongoStore from "connect-mongo";
+import authRoutes from "./routes/auth.js";
 import fileRoutes from "./routes/file.js";
 import documentRoutes from "./routes/document.js";
-import "./config/passport.js";
-import MongoStore from "connect-mongo";
 
 dotenv.config();
 
@@ -20,45 +19,27 @@ app.use(
     secret: process.env.SESSION_SECRET,
     resave: false,
     saveUninitialized: false,
-    store: MongoStore.create({
-      mongoUrl: process.env.MONGO_URI,
-      collectionName: "sessions",
-    }),
+    store: MongoStore.create({ mongoUrl: process.env.MONGO_URI }),
     cookie: {
-      maxAge: 24 * 60 * 60 * 1000,
+      maxAge: 24 * 60 * 60 * 1000, // 1 day
     },
   })
 );
 
-app.use(passport.initialize());
-app.use(passport.session());
-
 app.use("/uploads", express.static("uploads"));
 
-// Routes
+app.use("/api/auth", authRoutes);
 app.use("/api/files", fileRoutes);
 app.use("/api/documents", documentRoutes);
 
-// Google OAuth login route
-app.get(
-  "/auth/google",
-  passport.authenticate("google", { scope: ["profile", "email"] })
-);
-
-app.get(
-  "/api/auth/google/callback",
-  passport.authenticate("google", {
-    failureRedirect: "/",
-  }),
-  (req, res) => {
-    res.redirect("/dashboard");
+app.get("/dashboard", (req, res) => {
+  if (!req.session.userId) {
+    return res
+      .status(401)
+      .json({ message: "Unauthorized. Please login first." });
   }
-);
-
-app.get("/api/auth/logout", (req, res) => {
-  req.logout((err) => {
-    if (err) return next(err);
-    res.redirect("/");
+  res.json({
+    message: `Welcome to the Organization Dashboard, User ID: ${req.session.userId}`,
   });
 });
 
@@ -70,7 +51,7 @@ mongoose
   .then(() => console.log("MongoDB connected"))
   .catch((err) => console.log("DB Connection Error:", err));
 
-const PORT = process.env.PORT || 5001;
+const PORT = process.env.PORT || 5000;
 app.listen(PORT, () => {
   console.log(`Server running on port ${PORT}`);
 });
