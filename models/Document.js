@@ -1,10 +1,34 @@
 import mongoose from "mongoose";
 
 const documentSchema = new mongoose.Schema({
-  title: { type: String, required: true },
-  content: { type: String, default: "" },
-  createdBy: { type: mongoose.Schema.Types.ObjectId, ref: "User" },
-  createdAt: { type: Date, default: Date.now },
+  title: {
+    type: String,
+    required: true,
+  },
+  content: {
+    type: String,
+    required: true,
+  },
+  owner: {
+    type: mongoose.Schema.Types.ObjectId,
+    ref: "User",
+    required: true,
+  },
+  createdAt: {
+    type: Date,
+    default: Date.now,
+  },
+  updatedAt: {
+    type: Date,
+    default: Date.now,
+  },
 });
 
-export default mongoose.model("Document", documentSchema);
+documentSchema.pre("save", function (next) {
+  this.updatedAt = Date.now();
+  next();
+});
+
+const Document = mongoose.model("Document", documentSchema);
+
+export default Document;

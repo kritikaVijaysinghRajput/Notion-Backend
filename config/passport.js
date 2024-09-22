@@ -12,6 +12,7 @@ passport.use(
     async (accessToken, refreshToken, profile, done) => {
       try {
         let user = await User.findOne({ googleId: profile.id });
+
         if (!user) {
           user = new User({
             googleId: profile.id,
@@ -28,10 +29,12 @@ passport.use(
   )
 );
 
+// Serialize user to store user ID in session
 passport.serializeUser((user, done) => {
   done(null, user.id);
 });
 
+// Deserialize user to retrieve full user details from ID
 passport.deserializeUser(async (id, done) => {
   try {
     const user = await User.findById(id);
@@ -40,3 +43,5 @@ passport.deserializeUser(async (id, done) => {
     done(error, false);
   }
 });
+
+export default passport;
