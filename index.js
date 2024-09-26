@@ -21,15 +21,14 @@ app.use(
     saveUninitialized: false,
     store: MongoStore.create({ mongoUrl: process.env.MONGO_URI }),
     cookie: {
-      maxAge: 24 * 60 * 60 * 1000, // 1 day
+      maxAge: 24 * 60 * 60 * 1000,
     },
   })
 );
 
 app.use("/uploads", express.static("uploads"));
-
-app.use("/api/auth", authRoutes);
 app.use("/api/files", fileRoutes);
+app.use("/api/auth", authRoutes);
 app.use("/api/documents", documentRoutes);
 
 app.get("/dashboard", (req, res) => {

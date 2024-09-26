@@ -18,15 +18,11 @@ const storage = multer.diskStorage({
 });
 
 const upload = multer({ storage });
-
 const router = express.Router();
 
 router.post("/upload", upload.single("file"), uploadFile);
-
 router.get("/", getAllFiles);
-
 router.get("/:id/download", downloadFile);
-
 router.delete("/:id", deleteFile);
 
 export default router;

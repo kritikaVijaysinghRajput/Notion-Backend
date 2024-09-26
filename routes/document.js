@@ -3,14 +3,12 @@ import Document from "../models/Document.js";
 
 const router = express.Router();
 
-// Middleware to simulate user authentication (for example purposes)
 const authenticateUser = (req, res, next) => {
-  // Assuming you have a way to extract user info from headers or session
-  const userId = req.headers["user-id"]; // Example: getting user ID from request headers
+  const userId = req.headers["user-id"];
   if (!userId) {
     return res.status(401).json({ message: "Unauthorized" });
   }
-  req.user = { _id: userId }; // Simulate user object
+  req.user = { _id: userId };
   next();
 };
 
@@ -79,7 +77,9 @@ router.delete("/:id", authenticateUser, async (req, res) => {
       return res.status(404).json({ message: "Document not found" });
     }
 
-    await document.remove();
+    // Use the correct method to delete the document
+    await Document.findByIdAndDelete(req.params.id);
+
     res.status(200).json({ message: "Document deleted" });
   } catch (error) {
     res.status(500).json({ message: "Error deleting document", error });

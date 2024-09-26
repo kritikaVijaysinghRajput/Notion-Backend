@@ -1,9 +1,20 @@
 import Document from "../models/Document.js";
 
+const isAuthenticated = (req, res, next) => {
+  if (!req.session.userId) {
+    return res.status(401).json({ message: "Unauthorized access" });
+  }
+  next();
+};
+
 export const createDocument = async (req, res) => {
   try {
     const { title, content } = req.body;
-    const newDocument = new Document({ title, content, user: req.user._id });
+    const newDocument = new Document({
+      title,
+      content,
+      user: req.session.userId,
+    });
 
     await newDocument.save();
     res.status(201).json(newDocument);
@@ -14,7 +25,7 @@ export const createDocument = async (req, res) => {
 
 export const getDocuments = async (req, res) => {
   try {
-    const documents = await Document.find({ user: req.user._id });
+    const documents = await Document.find({ user: req.session.userId });
     res.status(200).json(documents);
   } catch (error) {
     res.status(500).json({ error: "Error fetching documents" });
@@ -24,7 +35,7 @@ export const getDocuments = async (req, res) => {
 export const getDocumentById = async (req, res) => {
   try {
     const document = await Document.findById(req.params.id);
-    if (!document || document.user.toString() !== req.user._id.toString()) {
+    if (!document || document.user.toString() !== req.session.userId) {
       return res.status(404).json({ error: "Document not found" });
     }
     res.status(200).json(document);
@@ -38,7 +49,7 @@ export const updateDocument = async (req, res) => {
     const { title, content } = req.body;
     const document = await Document.findById(req.params.id);
 
-    if (!document || document.user.toString() !== req.user._id.toString()) {
+    if (!document || document.user.toString() !== req.session.userId) {
       return res.status(404).json({ error: "Document not found" });
     }
 
@@ -56,7 +67,7 @@ export const deleteDocument = async (req, res) => {
   try {
     const document = await Document.findById(req.params.id);
 
-    if (!document || document.user.toString() !== req.user._id.toString()) {
+    if (!document || document.user.toString() !== req.session.userId) {
       return res.status(404).json({ error: "Document not found" });
     }
 
