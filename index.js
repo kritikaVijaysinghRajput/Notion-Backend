@@ -3,6 +3,7 @@ import dotenv from "dotenv";
 import mongoose from "mongoose";
 import session from "express-session";
 import MongoStore from "connect-mongo";
+import cors from "cors";
 import authRoutes from "./routes/auth.js";
 import fileRoutes from "./routes/file.js";
 import documentRoutes from "./routes/document.js";
@@ -10,6 +11,13 @@ import documentRoutes from "./routes/document.js";
 dotenv.config();
 
 const app = express();
+
+app.use(
+  cors({
+    origin: "http://localhost:5173",
+    credentials: true,
+  })
+);
 
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
