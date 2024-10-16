@@ -4,7 +4,6 @@ import bcrypt from "bcryptjs";
 export const signupUser = async (req, res) => {
   const { name, email, password } = req.body;
 
-  // Validate input
   if (!name || !email || !password) {
     return res
       .status(400)
@@ -12,13 +11,11 @@ export const signupUser = async (req, res) => {
   }
 
   try {
-    // Check if user already exists
     const existingUser = await User.findOne({ email });
     if (existingUser) {
       return res.status(400).json({ message: "User already exists." });
     }
 
-    // Create and save the new user
     const newUser = new User({ name, email, password });
     await newUser.save();
     res.status(201).json({ message: "Signup successful." });

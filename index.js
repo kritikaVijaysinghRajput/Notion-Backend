@@ -7,6 +7,7 @@ import cors from "cors";
 import authRoutes from "./routes/auth.js";
 import fileRoutes from "./routes/file.js";
 import documentRoutes from "./routes/document.js";
+import { requireAuth, verifyClerkToken } from "./middlewares/clerkAuth.js";
 
 dotenv.config();
 
@@ -34,17 +35,26 @@ app.use(
   })
 );
 
+app.use(verifyClerkToken);
+
 app.use("/uploads", express.static("uploads"));
+
 app.use("/api/files", fileRoutes);
 app.use("/api/auth", authRoutes);
 app.use("/api/documents", documentRoutes);
+app.post("/api/users", async (req, res) => {
+  const { clerkId, email, name } = req.body;
+  const newUser = new User({ clerkId, email, name });
 
-app.get("/dashboard", (req, res) => {
-  if (!req.session.userId) {
-    return res
-      .status(401)
-      .json({ message: "Unauthorized. Please login first." });
+  try {
+    await newUser.save();
+    res.status(201).json(newUser);
+  } catch (error) {
+    res.status(500).json({ message: "Error creating user", error });
   }
+});
+
+app.get("/dashboard", requireAuth, (req, res) => {
   res.json({
     message: `Welcome to the Organization Dashboard, User ID: ${req.session.userId}`,
   });
@@ -58,7 +68,7 @@ mongoose
   .then(() => console.log("MongoDB connected"))
   .catch((err) => console.log("DB Connection Error:", err));
 
-const PORT = process.env.PORT || 5000;
+const PORT = process.env.PORT || 5001;
 app.listen(PORT, () => {
   console.log(`Server running on port ${PORT}`);
 });
